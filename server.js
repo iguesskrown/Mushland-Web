@@ -18,6 +18,20 @@ const products = new Map([
 app.use(express.json());
 app.use(express.static(__dirname));
 
+app.get('/api/skin-image/:username', async (request, response) => {
+  try {
+    if (!/^[A-Za-z0-9_]{1,16}$/.test(request.params.username)) {
+      return response.status(400).end();
+    }
+    const textureResponse = await fetch(`https://mc-heads.net/skin/${encodeURIComponent(request.params.username)}`);
+    if (!textureResponse.ok) return response.status(textureResponse.status).end();
+    response.type('png');
+    return response.send(Buffer.from(await textureResponse.arrayBuffer()));
+  } catch (error) {
+    return response.status(502).end();
+  }
+});
+
 app.get('/api/skin/:username', async (request, response) => {
   try {
     const username = encodeURIComponent(request.params.username);
@@ -30,9 +44,9 @@ app.get('/api/skin/:username', async (request, response) => {
     const textures = sessionProfile.properties?.find((property) => property.name === 'textures');
     if (!textures) return response.status(404).json({ error: 'Minecraft skin not found.' });
     const decoded = JSON.parse(Buffer.from(textures.value, 'base64').toString('utf8'));
-    const skinUrl = decoded.textures?.SKIN?.url?.replace(/^http:/, 'https:');
+    const skinUrl = decoded.textures?.SKIN?.url;
     if (!skinUrl) return response.status(404).json({ error: 'Minecraft skin not found.' });
-    return response.json({ skinUrl });
+    return response.json({ skinUrl: `/api/skin-image/${encodeURIComponent(profile.name)}` });
   } catch (error) {
     return response.status(502).json({ error: 'Unable to load Minecraft skin.' });
   }
