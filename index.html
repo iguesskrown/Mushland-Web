@@ -499,14 +499,18 @@
 
     async function getPlayerSkinUrl() {
       if (!playerName) return 'assets/guest-skin.png';
-      try {
-        const skinResponse = await fetch(`/api/skin/${encodeURIComponent(playerName)}`);
-        if (!skinResponse.ok) return 'assets/guest-skin.png';
-        const skinData = await skinResponse.json();
-        return skinData.skinUrl || 'assets/guest-skin.png';
-      } catch (error) {
-        return 'assets/guest-skin.png';
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const skinResponse = await fetch(`/api/skin/${encodeURIComponent(playerName)}`, { cache: 'no-store' });
+          if (skinResponse.ok) {
+            const skinData = await skinResponse.json();
+            if (skinData.skinUrl) return skinData.skinUrl;
+          }
+        } catch {
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
       }
+      return 'assets/guest-skin.png';
     }
 
     async function setupSkinViewer() {
