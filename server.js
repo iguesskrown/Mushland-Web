@@ -148,6 +148,27 @@ app.get('/api/admin/orders', requireAdmin, (request, response) => {
   response.json(readOrders().sort((first, second) => second.createdAt.localeCompare(first.createdAt)));
 });
 
+app.post('/api/admin/orders/:orderId/fulfill', requireAdmin, (request, response) => {
+  const orders = readOrders();
+  const order = orders.find((entry) => entry.orderId === request.params.orderId);
+  if (!order) return response.status(404).json({ error: 'Order not found.' });
+  if (order.status !== 'paid_manual_fulfilment') {
+    return response.status(400).json({ error: 'Only verified paid orders can be fulfilled.' });
+  }
+
+  order.status = 'fulfilled';
+  order.fulfilledAt = new Date().toISOString();
+  writeOrders(orders);
+  return response.json(order);
+});
+
+app.delete('/api/admin/orders/fulfilled', requireAdmin, (request, response) => {
+  const orders = readOrders();
+  const remainingOrders = orders.filter((order) => order.status !== 'fulfilled');
+  writeOrders(remainingOrders);
+  return response.json({ removed: orders.length - remainingOrders.length });
+});
+
 app.listen(port, () => {
   console.log(`Mushland Store running at http://localhost:${port}`);
 });
