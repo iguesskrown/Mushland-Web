@@ -18,6 +18,26 @@ const products = new Map([
 app.use(express.json());
 app.use(express.static(__dirname));
 
+app.get('/api/skin/:username', async (request, response) => {
+  try {
+    const username = encodeURIComponent(request.params.username);
+    const profileResponse = await fetch(`https://api.mojang.com/users/profiles/minecraft/${username}`);
+    if (!profileResponse.ok) return response.status(profileResponse.status).json({ error: 'Minecraft profile not found.' });
+    const profile = await profileResponse.json();
+    const sessionResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${profile.id}`);
+    if (!sessionResponse.ok) return response.status(sessionResponse.status).json({ error: 'Minecraft skin not found.' });
+    const sessionProfile = await sessionResponse.json();
+    const textures = sessionProfile.properties?.find((property) => property.name === 'textures');
+    if (!textures) return response.status(404).json({ error: 'Minecraft skin not found.' });
+    const decoded = JSON.parse(Buffer.from(textures.value, 'base64').toString('utf8'));
+    const skinUrl = decoded.textures?.SKIN?.url?.replace(/^http:/, 'https:');
+    if (!skinUrl) return response.status(404).json({ error: 'Minecraft skin not found.' });
+    return response.json({ skinUrl });
+  } catch (error) {
+    return response.status(502).json({ error: 'Unable to load Minecraft skin.' });
+  }
+});
+
 function readOrders() {
   try {
     const orders = JSON.parse(fs.readFileSync(ordersFile, 'utf8'));

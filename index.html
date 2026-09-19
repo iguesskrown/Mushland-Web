@@ -500,16 +500,10 @@
     async function getPlayerSkinUrl() {
       if (!playerName) return 'assets/guest-skin.png';
       try {
-        const profileResponse = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(playerName)}`);
-        if (!profileResponse.ok) return 'assets/guest-skin.png';
-        const profile = await profileResponse.json();
-        const sessionResponse = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${profile.id}`);
-        if (!sessionResponse.ok) return 'assets/guest-skin.png';
-        const sessionProfile = await sessionResponse.json();
-        const textures = sessionProfile.properties?.find((property) => property.name === 'textures');
-        if (!textures) return 'assets/guest-skin.png';
-        const decoded = JSON.parse(atob(textures.value));
-        return decoded.textures?.SKIN?.url || 'assets/guest-skin.png';
+        const skinResponse = await fetch(`/api/skin/${encodeURIComponent(playerName)}`);
+        if (!skinResponse.ok) return 'assets/guest-skin.png';
+        const skinData = await skinResponse.json();
+        return skinData.skinUrl || 'assets/guest-skin.png';
       } catch (error) {
         return 'assets/guest-skin.png';
       }
