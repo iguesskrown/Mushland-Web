@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mushland Orders</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; color: #20243d; background: #f5f4fa; }
+    body { max-width: 1050px; margin: 0 auto; padding: 36px 20px; }
+    h1 { margin: 0 0 8px; }
+    p { color: #6f6a7d; }
+    form { display: flex; gap: 10px; margin: 24px 0; }
+    input, button { border: 1px solid #d8d3e3; border-radius: 7px; padding: 12px 14px; font: inherit; }
+    input { flex: 1; min-width: 0; }
+    button { color: white; background: #7136c8; cursor: pointer; font-weight: 700; }
+    #message { min-height: 22px; color: #b43d59; }
+    .orders { display: grid; gap: 14px; }
+    .order { padding: 18px; border: 1px solid #e4e0ed; border-radius: 10px; background: white; box-shadow: 0 6px 18px #3b216d0a; }
+    .order-head, .order-row { display: flex; justify-content: space-between; gap: 16px; }
+    .order-head { align-items: center; margin-bottom: 12px; }
+    .order-head h2 { margin: 0; font-size: 17px; }
+    .status { border-radius: 20px; padding: 6px 10px; color: #116b3b; background: #e0f6e8; font-size: 12px; font-weight: 700; }
+    .order-row { padding: 6px 0; border-top: 1px solid #f0edf4; font-size: 13px; }
+    .order-row span:first-child { color: #7a7487; }
+    .empty { padding: 28px; border: 1px dashed #cbc4d8; border-radius: 10px; text-align: center; color: #7a7487; }
+    @media (max-width: 560px) { form { flex-direction: column; } .order-head, .order-row { align-items: flex-start; flex-direction: column; gap: 5px; } }
+  </style>
+</head>
+<body>
+  <h1>Mushland Orders</h1>
+  <p>Use this private page to check paid orders before manually granting ranks.</p>
+  <form id="login-form">
+    <input id="admin-token" type="password" placeholder="Admin token" autocomplete="current-password" required>
+    <button type="submit">Load orders</button>
+  </form>
+  <div id="message" aria-live="polite"></div>
+  <main class="orders" id="orders"><div class="empty">Enter your admin token to load orders.</div></main>
+  <script>
+    const form = document.querySelector('#login-form');
+    const tokenInput = document.querySelector('#admin-token');
+    const message = document.querySelector('#message');
+    const orders = document.querySelector('#orders');
+
+    function money(amount) {
+      return `₹${(Number(amount || 0) / 100).toFixed(2)}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[character]));
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      message.textContent = '';
+      orders.innerHTML = '<div class="empty">Loading...</div>';
+      try {
+        const response = await fetch('/api/admin/orders', { headers: { 'x-admin-token': tokenInput.value } });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to load orders.');
+        if (!data.length) {
+          orders.innerHTML = '<div class="empty">No orders yet.</div>';
+          return;
+        }
+        orders.innerHTML = data.map((order) => `
+          <article class="order">
+            <div class="order-head"><h2>${escapeHtml(order.playerName)} · ${escapeHtml(order.orderId)}</h2><span class="status">${escapeHtml(order.status)}</span></div>
+            <div class="order-row"><span>Products</span><strong>${order.items.map((item) => `${escapeHtml(item.name)} × ${escapeHtml(item.quantity)}`).join(', ')}</strong></div>
+            <div class="order-row"><span>Total</span><strong>${money(order.amount)}</strong></div>
+            <div class="order-row"><span>Email</span><strong>${escapeHtml(order.email || 'Not provided')}</strong></div>
+            <div class="order-row"><span>Payment ID</span><strong>${escapeHtml(order.paymentId || 'Waiting for payment')}</strong></div>
+            <div class="order-row"><span>Created</span><strong>${escapeHtml(new Date(order.createdAt).toLocaleString())}</strong></div>
+          </article>
+        `).join('');
+      } catch (error) {
+        orders.innerHTML = '<div class="empty">Enter a valid admin token and try again.</div>';
+        message.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
