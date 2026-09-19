@@ -178,6 +178,15 @@ app.post('/api/verify-payment', (request, response) => {
   return response.json({ verified: true, paymentId: razorpay_payment_id });
 });
 
+app.post('/api/payment-failed', (request, response) => {
+  const orderId = String(request.body.orderId || '');
+  const orders = readOrders();
+  const remainingOrders = orders.filter((order) => !(order.orderId === orderId && order.status === 'created'));
+
+  if (remainingOrders.length !== orders.length) writeOrders(remainingOrders);
+  return response.json({ removed: remainingOrders.length !== orders.length });
+});
+
 app.get('/api/admin/orders', requireAdmin, (request, response) => {
   response.json(readOrders().sort((first, second) => second.createdAt.localeCompare(first.createdAt)));
 });
@@ -194,13 +203,6 @@ app.post('/api/admin/orders/:orderId/fulfill', requireAdmin, (request, response)
   order.fulfilledAt = new Date().toISOString();
   writeOrders(orders);
   return response.json(order);
-});
-
-app.delete('/api/admin/orders/fulfilled', requireAdmin, (request, response) => {
-  const orders = readOrders();
-  const remainingOrders = orders.filter((order) => order.status !== 'fulfilled');
-  writeOrders(remainingOrders);
-  return response.json({ removed: orders.length - remainingOrders.length });
 });
 
 app.listen(port, () => {

@@ -5,46 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mushland Orders</title>
   <style>
-    :root { color-scheme: light; font-family: Arial, sans-serif; color: #20243d; background: #f5f4fa; }
-    body { max-width: 1050px; margin: 0 auto; padding: 36px 20px; }
-    h1 { margin: 0 0 8px; }
-    p { color: #6f6a7d; }
-    form { display: flex; gap: 10px; margin: 24px 0; }
-    input, button { border: 1px solid #d8d3e3; border-radius: 7px; padding: 12px 14px; font: inherit; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+    :root { color-scheme: light; font-family: 'DM Sans', sans-serif; color: #20385f; background: #f4f7fb; }
+    * { box-sizing: border-box; }
+    body { max-width: 1050px; margin: 0 auto; padding: 42px 20px 56px; }
+    h1 { margin: 0 0 8px; color: #18365e; font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 5vw, 44px); letter-spacing: -.8px; }
+    p { color: #6f7d94; }
+    .intro { max-width: 620px; margin: 0 0 26px; line-height: 1.6; }
+    form { display: flex; gap: 10px; margin: 24px 0 16px; }
+    input, button { border: 1px solid #d7e0eb; border-radius: 7px; padding: 12px 14px; font: inherit; }
     input { flex: 1; min-width: 0; }
-    button { color: white; background: #7136c8; cursor: pointer; font-weight: 700; }
-    button.secondary { color: #7136c8; background: #f1eafd; }
-    #message { min-height: 22px; color: #b43d59; }
+    button { color: white; background: #20385f; cursor: pointer; font-weight: 700; transition: background .2s, transform .2s; }
+    button:hover:not(:disabled) { background: #2d4d7e; transform: translateY(-1px); }
+    button.secondary { color: #20385f; background: #eaf0f7; }
+    button.secondary:hover:not(:disabled) { background: #dce7f3; }
+    #message { min-height: 22px; color: #b43d59; font-size: 13px; }
+    .admin-actions { display: flex; justify-content: flex-end; margin: 4px 0 18px; }
+    .order-group { margin-top: 28px; }
+    .order-group h2 { margin: 0 0 12px; color: #18365e; font-family: 'Space Grotesk', sans-serif; font-size: 20px; }
     .orders { display: grid; gap: 14px; }
-    .order { padding: 18px; border: 1px solid #e4e0ed; border-radius: 10px; background: white; box-shadow: 0 6px 18px #3b216d0a; }
+    .order { padding: 20px; border: 1px solid #dfe6ee; border-radius: 10px; background: white; box-shadow: 0 8px 24px rgba(32, 56, 95, .06); }
     .order-head, .order-row { display: flex; justify-content: space-between; gap: 16px; }
     .order-head { align-items: center; margin-bottom: 12px; }
-    .order-head h2 { margin: 0; font-size: 17px; }
+    .order-head h2 { margin: 0; color: #18365e; font-family: 'Space Grotesk', sans-serif; font-size: 17px; }
     .status { border-radius: 20px; padding: 6px 10px; color: #116b3b; background: #e0f6e8; font-size: 12px; font-weight: 700; }
-    .order-row { padding: 6px 0; border-top: 1px solid #f0edf4; font-size: 13px; }
-    .order-row span:first-child { color: #7a7487; }
-    .empty { padding: 28px; border: 1px dashed #cbc4d8; border-radius: 10px; text-align: center; color: #7a7487; }
-    @media (max-width: 560px) { form { flex-direction: column; } .order-head, .order-row { align-items: flex-start; flex-direction: column; gap: 5px; } }
+    .status:not(:empty) { text-transform: capitalize; }
+    .order-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .remove-order { padding: 9px 12px; font-size: 12px; }
+    .fulfill-order { margin-top: 14px; }
+    .order-row { padding: 8px 0; border-top: 1px solid #edf1f5; font-size: 13px; }
+    .order-row span:first-child { color: #7a879a; }
+    .empty { padding: 34px 28px; border: 1px dashed #c7d3e1; border-radius: 10px; text-align: center; color: #7a879a; background: rgba(255, 255, 255, .6); }
+    @media (max-width: 560px) { body { padding: 28px 14px 42px; } form { flex-direction: column; } .admin-actions { justify-content: stretch; } .admin-actions button { width: 100%; } .order-head, .order-row { align-items: flex-start; flex-direction: column; gap: 5px; } }
   </style>
 </head>
 <body>
   <h1>Mushland Orders</h1>
-  <p>Use this private page to check paid orders before manually granting ranks.</p>
+  <p class="intro">Review verified payments, grant the purchased rank, and remove completed orders from this private workspace.</p>
   <form id="login-form">
     <input id="admin-token" type="password" placeholder="Admin token" autocomplete="current-password" required>
     <button type="submit">Load orders</button>
   </form>
   <div id="message" aria-live="polite"></div>
-  <div class="admin-actions">
-    <button class="secondary" id="clear-fulfilled" type="button">Clear fulfilled orders</button>
+  <div class="order-group">
+    <h2>Pending orders</h2>
+    <main class="orders" id="orders"><div class="empty">Enter your admin token to load orders.</div></main>
   </div>
-  <main class="orders" id="orders"><div class="empty">Enter your admin token to load orders.</div></main>
+  <div class="order-group">
+    <h2>Fulfilled order history</h2>
+    <main class="orders" id="fulfilled-orders"><div class="empty">Fulfilled orders will appear here.</div></main>
+  </div>
   <script>
     const form = document.querySelector('#login-form');
     const tokenInput = document.querySelector('#admin-token');
     const message = document.querySelector('#message');
     const orders = document.querySelector('#orders');
-    const clearFulfilledButton = document.querySelector('#clear-fulfilled');
+    const fulfilledOrders = document.querySelector('#fulfilled-orders');
     let adminToken = '';
 
     function money(amount) {
@@ -61,6 +77,25 @@
       }[character]));
     }
 
+    function renderOrder(order) {
+      return `
+        <article class="order">
+          <div class="order-head"><h2>${escapeHtml(order.playerName)} · ${escapeHtml(order.orderId)}</h2><span class="status">${escapeHtml(order.status.replaceAll('_', ' '))}</span></div>
+          <div class="order-row"><span>Products</span><strong>${order.items.map((item) => `${escapeHtml(item.name)} × ${escapeHtml(item.quantity)}`).join(', ')}</strong></div>
+          <div class="order-row"><span>Total</span><strong>${money(order.amount)}</strong></div>
+          <div class="order-row"><span>Email</span><strong>${escapeHtml(order.email || 'Not provided')}</strong></div>
+          <div class="order-row"><span>Payment ID</span><strong>${escapeHtml(order.paymentId || 'Waiting for payment')}</strong></div>
+          <div class="order-row"><span>Created</span><strong>${escapeHtml(new Date(order.createdAt).toLocaleString())}</strong></div>
+          ${order.fulfilledAt ? `<div class="order-row"><span>Fulfilled</span><strong>${escapeHtml(new Date(order.fulfilledAt).toLocaleString())}</strong></div>` : ''}
+          ${order.status === 'paid_manual_fulfilment' ? `<button class="fulfill-order" data-order-id="${escapeHtml(order.orderId)}" type="button">Mark as fulfilled</button>` : ''}
+        </article>
+      `;
+    }
+
+    function renderOrderGroup(container, orderList, emptyMessage) {
+      container.innerHTML = orderList.length ? orderList.map(renderOrder).join('') : `<div class="empty">${emptyMessage}</div>`;
+    }
+
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       message.textContent = '';
@@ -70,21 +105,10 @@
         const response = await fetch('/api/admin/orders', { headers: { 'x-admin-token': adminToken } });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Unable to load orders.');
-        if (!data.length) {
-          orders.innerHTML = '<div class="empty">No orders yet.</div>';
-          return;
-        }
-        orders.innerHTML = data.map((order) => `
-          <article class="order">
-            <div class="order-head"><h2>${escapeHtml(order.playerName)} · ${escapeHtml(order.orderId)}</h2><span class="status">${escapeHtml(order.status)}</span></div>
-            <div class="order-row"><span>Products</span><strong>${order.items.map((item) => `${escapeHtml(item.name)} × ${escapeHtml(item.quantity)}`).join(', ')}</strong></div>
-            <div class="order-row"><span>Total</span><strong>${money(order.amount)}</strong></div>
-            <div class="order-row"><span>Email</span><strong>${escapeHtml(order.email || 'Not provided')}</strong></div>
-            <div class="order-row"><span>Payment ID</span><strong>${escapeHtml(order.paymentId || 'Waiting for payment')}</strong></div>
-            <div class="order-row"><span>Created</span><strong>${escapeHtml(new Date(order.createdAt).toLocaleString())}</strong></div>
-            ${order.status === 'paid_manual_fulfilment' ? `<button class="fulfill-order" data-order-id="${escapeHtml(order.orderId)}" type="button">Mark as fulfilled</button>` : ''}
-          </article>
-        `).join('');
+        const pending = data.filter((order) => order.status !== 'fulfilled');
+        const fulfilled = data.filter((order) => order.status === 'fulfilled');
+        renderOrderGroup(orders, pending, 'No pending orders.');
+        renderOrderGroup(fulfilledOrders, fulfilled, 'No fulfilled orders yet.');
       } catch (error) {
         orders.innerHTML = '<div class="empty">Enter a valid admin token and try again.</div>';
         message.textContent = error.message;
@@ -94,6 +118,7 @@
     orders.addEventListener('click', async (event) => {
       const button = event.target.closest('.fulfill-order');
       if (!button) return;
+
       button.disabled = true;
       const response = await fetch(`/api/admin/orders/${encodeURIComponent(button.dataset.orderId)}/fulfill`, {
         method: 'POST',
@@ -107,20 +132,6 @@
       form.requestSubmit();
     });
 
-    clearFulfilledButton.addEventListener('click', async () => {
-      if (!adminToken || !confirm('Remove all fulfilled orders? Paid orders waiting for fulfilment will remain.')) return;
-      const response = await fetch('/api/admin/orders/fulfilled', {
-        method: 'DELETE',
-        headers: { 'x-admin-token': adminToken }
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        message.textContent = data.error || 'Unable to clear fulfilled orders.';
-        return;
-      }
-      message.textContent = `${data.removed} fulfilled order(s) removed.`;
-      form.requestSubmit();
-    });
   </script>
 </body>
 </html>

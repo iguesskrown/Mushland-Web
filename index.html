@@ -899,6 +899,13 @@
           });
 
           razorpay.on('payment.failed', (paymentError) => {
+            fetch('/api/payment-failed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: paymentError.error?.metadata?.order_id || orderData.orderId
+              })
+            }).catch(() => {});
             if (checkoutError) checkoutError.textContent = paymentError.error?.description || 'Payment was not completed.';
             if (submitButton) submitButton.disabled = false;
           });
